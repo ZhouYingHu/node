@@ -1,0 +1,6 @@
+const sever = require('./sever')
+const route = require('./route')
+const api = require('./api')
+sever.use(route)
+sever.use(api)
+sever.start()
