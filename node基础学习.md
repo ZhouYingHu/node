@@ -512,3 +512,172 @@ const route = {
 module.exports = route
 ```
 
+[node基础剩余的路由部分在这里面](https://github.com/ZhouYingHu/node)
+
+# 二、Express框架
+
+基于Node.js平台，快速、开放、极简的web开发框架。
+
+## 路由
+
+```js
+const express = require('express')
+const app = express()
+app.get("/", (req, res) => {
+    // res.send(`<html>
+    // <h1>1111</h1>
+    // </html>`)
+    res.send({
+        name: '周瀛',
+        age: 18
+    })
+})
+app.get('/login', (req, res) => {
+    res.write('login')
+    res.end()
+})
+// 字符串模式的路由路径示例
+//  匹配acd和abcd
+app.get('/ab?cd', function(req, res) {
+    res.send('ab?cd')
+})
+// 匹配/ab/****
+app.get('/ab/:id', (req, res) => {
+    res.send('匹配/ab/****')
+})
+// 匹配abcd、abbcd、abbbcd等
+app.get('/a+cd', (req, res) => {
+    res.send('ab+cd')// 只能重复加号前面的字符
+})
+// 匹配abcd、abxcd、ab...cd等
+app.get('/ab*cd', (req, res) => {
+    res.send('ab*cd'); // 中间任意
+})
+// 匹配/abe 和 /abcde
+app.get('/ab(cd)?e', (req, res) => {
+    res.send('ab(cd)?e')
+})
+// 使用正则表达式的路由路径示例：
+// 匹配fly结尾的
+app.get(/.*fly$/, (req, res) => {
+    res.send('/.*fly$/')
+})
+app.listen(3000, () => {
+    console.log('sever start')
+})
+```
+
+可以为请求处理提供多个回调函数，其行为类似==中间件==。唯一的区别是这些回调函数有可能调用next('route')方法而略过其他的路由回调函数，可以利用该机制为路由定义前提条件，如果在现有路径上继续执行没有意义，则可将控制权交给剩下的路径。
+
+```js
+const fun1 = (req, res, next) => {
+    const a = false
+    if (a) {
+        res.name='zhou'
+        next()
+    } else {
+        res.send('fun1')
+    }
+}
+const fun2 = (req, res) => {
+    console.log(res.name) //zhou
+    res.send({ list: [1, 23, 11] })
+}
+app.get('/zhou', [fun1, fun2])
+```
+
+## 中间件
+
+Express是一个自身功能极简，完全是由路由和中间件构成一个的web开发框架：从本质上来说，一个Express应用就是在调用各种中间件。
+
+中间件是一个函数，它可以访问请求对象（request object(req)），响应对象（response object（res））,和web应用中处于请求-响应循环流程中的中间件，一般被命名为next的变量。
+
+==中间件的种类==
+
+1、应用级中间件
+
+应用级中间件绑定到app对象，使用app.use()和app.METHOD(),其中，METHOD是需要处理的HTTP请求的方法，例如GET,PUT,POST等等，全部小写。
+
+```js
+app.use([fun1, fun2])
+app.get('/zhou')
+```
+
+2、路由级别中间件
+
+路由级中间件和应用级中间件一样，只能它绑定对象为express.Router()。
+
+```js
+const express = require('express')
+const app = express()
+const HomeRouter = require('./router3/HomeRouter')
+// 应用级别
+app.use((req, res, next) => {
+    console.log('验证token')
+    next()
+})
+// 应用级别
+app.use('/home', HomeRouter)
+app.listen(3000, () => {
+    console.log('server start')
+})
+```
+
+```js
+const express = require('express')
+const router = express.Router()
+// 路由级别
+router.get('/', (req, res) => {
+    res.send('home')
+})
+router.get('/zhou', (req, res) => {
+    res.send('zhou')
+})
+router.get('/login', (req, res) => {
+    res.send('login')
+})
+module.exports = router
+```
+
+3、错误中间件
+
+```js
+app.use((req, res) => {
+    res.status(404).send('没找到')
+})
+```
+
+==获取请求数据==
+
+get请求
+
+```js
+router.get('/', (req, res) => {
+    res.send(req.query)
+})
+```
+
+post请求
+
+```js
+// 配置解析post参数的--不用带三方
+app.use(express.urlencoded({
+    extended: false
+}))// post参数--username=zhou&password=123
+app.use(express.json())// post参数-{"name":"zhou","age":11}
+// 响应前端的post请求
+router.post('/', (req, res) => {
+    console.log(req.body) // 必须配置中间件
+    res.send(req.body)
+})
+```
+
+## express托管静态文件
+
+通过Express内置的express.static可以方便地托管静态文件，例如图片、css、js文件等。将静态资源文件所在的目录作为参数传递给express.static中间件就可以提供静态资源文件的访问了。
+
+```js
+// 配置静态资源
+app.use('/hai', express.static("public"))// public是静态文件夹 
+```
+
