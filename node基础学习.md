@@ -681,3 +681,165 @@ router.post('/', (req, res) => {
 app.use('/hai', express.static("public"))// public是静态文件夹 
 ```
 
+## 服务端渲染与客户端渲染-ejs
+
+```ejs
+<% %>流程控制标签(写的是if else,for)
+<%= %>输出标签(原文输出HTML标签)
+<%- %>输出标签(HTML会被浏览器解析)
+<%# %>注释标签
+<%- include('user/show',{user:user})%>导入公共的模板内容
+```
+
+```js
+const express = require('express')
+const app = express()
+const HomeRouter = require('./router3/HomeRouter')
+const IndexRouter = require('./router2/IndexRouter')
+// 配置模板引擎
+app.set('views', "./static")
+app.set('view engine', 'html')
+app.engine('html', require('ejs').renderFile)// 支持直接渲染html文件
+// 配置静态资源
+app.use('/', express.static("static"))
+// 配置解析post参数的--不用带三方
+app.use(express.urlencoded({
+    extended: false
+}))// post参数--username=zhou&password=123
+app.use(express.json())// post参数-{"name":"zhou","age":11}
+// 应用级别
+app.use((req, res, next) => {
+    console.log('验证token')
+    next()
+})
+// 应用级别
+app.use('/home', HomeRouter)
+app.use('/login', IndexRouter)
+app.use((req, res) => {
+    res.status(404).send('没找到')
+})
+app.listen(3000, () => {
+    console.log('server start')
+})   
+```
+
+==ejs页面案例==
+
+```ejs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    home-页面
+    <%- include('./header.ejs',{isShow:true}) %>
+        <ul>
+            <% for(let i=0;i<list.length;i++){%>
+                <li>
+                    <%=list[i] %>
+                </li>
+                <% } %>
+        </ul>
+</body>
+</html>
+```
+
+# 三、Express 应用程序生成器
+
+通过应用生成器工具 `express-generator` 可以快速创建一个应用的骨架。（作者本人用的是ejs模板引擎，以下的操作来源于express中文网的生成器）。
+
+你可以通过 `npx` （包含在 Node.js 8.2.0 及更高版本中）命令来运行 Express 应用程序生成器。
+
+```
+$ npx express-generator
+```
+
+对于较老的 Node 版本，请通过 npm 将 Express 应用程序生成器安装到全局环境中并使用：
+
+```
+$ npm install -g express-generator
+$ express
+```
+
+`-h` 参数可以列出所有可用的命令行参数：
+
+```
+$ express -h
+
+  Usage: express [options] [dir]
+
+  Options:
+
+    -h, --help          输出使用方法
+        --version       输出版本号
+    -e, --ejs           添加对 ejs 模板引擎的支持
+        --hbs           添加对 handlebars 模板引擎的支持
+        --pug           添加对 pug 模板引擎的支持
+    -H, --hogan         添加对 hogan.js 模板引擎的支持
+        --no-view       创建不带视图引擎的项目
+    -v, --view <engine> 添加对视图引擎（view） <engine> 的支持 (ejs|hbs|hjs|jade|pug|twig|vash) （默认是 jade 模板引擎）
+    -c, --css <engine>  添加样式表引擎 <engine> 的支持 (less|stylus|compass|sass) （默认是普通的 css 文件）
+        --git           添加 .gitignore
+    -f, --force         强制在非空目录下创建
+```
+
+例如，如下命令创建了一个名称为 *myapp* 的 Express 应用。此应用将在当前目录下的 *myapp* 目录中创建，并且设置为使用 [Pug](https://pugjs.org/) 模板引擎（view engine）：
+
+```console
+$ express --view=pug myapp
+
+   create : myapp
+   create : myapp/package.json
+   create : myapp/app.js
+   create : myapp/public
+   create : myapp/public/javascripts
+   create : myapp/public/images
+   create : myapp/routes
+   create : myapp/routes/index.js
+   create : myapp/routes/users.js
+   create : myapp/public/stylesheets
+   create : myapp/public/stylesheets/style.css
+   create : myapp/views
+   create : myapp/views/index.pug
+   create : myapp/views/layout.pug
+   create : myapp/views/error.pug
+   create : myapp/bin
+   create : myapp/bin/www
+```
+
+然后安装所有依赖包并运行：
+
+```console
+$ cd myapp
+$ npm install
+$ npm start
+```
+
+然后在浏览器中打开 `http://localhost:3000/` 网址就可以看到这个应用了。
+
+通过生成器创建的应用一般都有如下目录结构：
+
+```console
+.
+├── app.js
+├── bin
+│   └── www
+├── package.json
+├── public
+│   ├── images
+│   ├── javascripts
+│   └── stylesheets
+│       └── style.css
+├── routes
+│   ├── index.js
+│   └── users.js
+└── views
+    ├── error.pug
+    ├── index.pug
+    └── layout.pug
+7 directories, 9 files
+```
